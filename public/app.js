@@ -1,41 +1,25 @@
-// A variável 'destinos' agora será carregada do servidor.
+// Constante da API para facilitar a manutenção
+const URL_API = 'http://localhost:3000/destinos';
 
-/**
- * 1. Função para carregar os dados de destinos do JSON Server.
- * @returns {Array} Retorna a lista de destinos.
- */
+// ----------------------------------------------------
+// READ: Carrega e Renderiza (Função atualizada do GET)
+// ----------------------------------------------------
+
 async function fetchDestinos() {
-    // URL base do JSON Server para a entidade 'destinos'
-    const URL_API = 'http://localhost:3000/destinos';
-    
     try {
-        // Realiza a requisição GET
         const response = await fetch(URL_API);
-        
-        // Verifica se a requisição foi bem-sucedida (Status 200)
-        if (!response.ok) {
-            // Lança um erro se o status for 4xx ou 5xx
-            throw new Error(`Erro ao carregar dados. Status: ${response.status}`);
-        }
-        
-        // Retorna os dados em formato JSON
+        if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
         return await response.json();
-        
     } catch (error) {
-        console.error("Erro ao conectar ou buscar dados do servidor:", error);
-        // Retorna um array vazio para não quebrar a aplicação em caso de falha.
-        return []; 
+        console.error("Erro ao buscar dados:", error);
+        return [];
     }
 }
 
-/**
- * 2. Função principal para montar e renderizar os cards.
- * Agora, ela precisa ser assíncrona para esperar o fetchDestinos().
- */
 async function montarCards() {
     const container = document.getElementById("cards-container");
+    container.innerHTML = ''; // Limpa o container
     
-    // Obtém os dados de forma dinâmica, esperando a promessa de fetchDestinos
     const destinos = await fetchDestinos(); 
 
     if (destinos.length === 0) {
@@ -43,30 +27,147 @@ async function montarCards() {
         return;
     }
 
-    // Limpa o conteúdo (caso necessário) e itera sobre os dados
     destinos.forEach(destino => {
         const card = document.createElement("div");
         card.classList.add("card");
 
-        // Conteúdo visual do card (igual ao seu original)
+        // Adiciona botões de Ação para CRUD
         card.innerHTML = `
             <img src="${destino.imagem}" alt="${destino.nome}">
             <h2>${destino.nome}</h2>
             <p>${destino.pais}</p>
             <p>${destino.descricao}</p>
+            <div class="card-actions">
+                <button onclick="editDestino(${destino.id})">Editar</button>
+                <button onclick="deleteDestino(${destino.id})">Excluir</button>
+            </div>
         `;
 
-        // Evento de clique para redirecionar para a página de detalhes
-        // NOTA: Para um CRUD completo, o link deveria usar o ID:
-        // window.location.href = `detalhes.html?id=${destino.id}`;
         card.addEventListener("click", () => {
-             // Mantendo o seu código original por enquanto:
-             window.location.href = destino.link;
+             // Redireciona para detalhes, passando o ID
+             window.location.href = `detalhes.html?id=${destino.id}`; 
         });
 
         container.appendChild(card);
     });
 }
 
-// Garante que a função montarCards seja chamada após o carregamento do DOM
-document.addEventListener("DOMContentLoaded", montarCards);
+// ----------------------------------------------------
+// CREATE: Cadastra Novo Destino (POST)
+// ----------------------------------------------------
+
+async function createDestino(novoDestino) {
+    try {
+        const response = await fetch(URL_API, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(novoDestino)
+        });
+
+        if (response.status === 201) {
+            alert(`Destino '${novoDestino.nome}' cadastrado com sucesso!`);
+            montarCards(); // Recarrega a lista para mostrar o novo item
+            return true;
+        } else {
+            throw new Error(`Falha ao cadastrar. Status: ${response.status}`);
+        }
+    } catch (error) {
+        console.error("Erro POST:", error);
+        alert('Erro ao cadastrar destino. Verifique o console.');
+        return false;
+    }
+}
+
+// Listener para o formulário de cadastro
+document.addEventListener("DOMContentLoaded", () => {
+    montarCards(); // Carrega os cards existentes
+
+    const form = document.getElementById('form-cadastro-destino');
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault(); 
+            
+            // Coleta dados do formulário
+            const novoDestino = {
+                nome: document.getElementById('nome').value,
+                pais: document.getElementById('pais').value,
+                descricao: document.getElementById('descricao').value,
+                // Valores padrão para os campos não presentes no formulário simples
+                imagem: "images/default.jpg", 
+                link: "detalhes.html"
+            };
+
+            await createDestino(novoDestino);
+            form.reset(); // Limpa o formulário após o sucesso
+        });
+    }
+});
+
+
+// ----------------------------------------------------
+// DELETE: Excluir Destino
+// ----------------------------------------------------
+
+async function deleteDestino(id) {
+    if (!confirm('Tem certeza que deseja excluir este destino?')) return;
+
+    try {
+        const response = await fetch(`${URL_API}/${id}`, {
+            method: 'DELETE'
+        });
+
+        // JSON Server retorna 200 OK ou 204 No Content
+        if (response.ok) { 
+            alert('Destino excluído com sucesso!');
+            montarCards(); // Recarrega a lista
+        } else {
+            throw new Error(`Falha ao excluir. Status: ${response.status}`);
+        }
+    } catch (error) {
+        console.error("Erro DELETE:", error);
+        alert('Erro ao excluir destino. Verifique o console.');
+    }
+}
+
+// ----------------------------------------------------
+// UPDATE: Editar Destino (PUT/PATCH) - Lógica de Exemplo
+// ----------------------------------------------------
+// NOTA: Esta lógica é mais complexa, pois geralmente abre um modal ou preenche um novo formulário.
+// Aqui está um exemplo SIMPLES para fins de teste.
+
+async function editDestino(id) {
+    // 1. Encontrar o destino (opcional, mas bom para mostrar o dado atual)
+    const currentName = prompt("Digite o novo nome para o destino (ID: " + id + "):");
+
+    if (!currentName || currentName.trim() === "") {
+        return; // Usuário cancelou ou não digitou nada
+    }
+
+    const updatedData = {
+        nome: currentName // Apenas atualizando o nome
+        // Em uma aplicação real, você enviaria todos os campos
+    };
+    
+    try {
+        const response = await fetch(`${URL_API}/${id}`, {
+            method: 'PATCH', // PATCH é melhor para atualizar campos específicos
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedData)
+        });
+
+        if (response.ok) {
+            alert('Destino atualizado com sucesso!');
+            montarCards(); // Recarrega a lista
+        } else {
+            throw new Error(`Falha ao atualizar. Status: ${response.status}`);
+        }
+
+    } catch (error) {
+        console.error("Erro PUT/PATCH:", error);
+        alert('Erro ao atualizar destino. Verifique o console.');
+    }
+}
