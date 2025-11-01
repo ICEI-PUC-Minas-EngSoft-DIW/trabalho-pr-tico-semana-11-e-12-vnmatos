@@ -1,18 +1,31 @@
 {
-  "usuarios": [
+  "destinos": [
     {
-      "id": "187cb7e5-e097-4224-8bc7-b610c855e2b1",
-      "login": "admin",
-      "senha": "123",
-      "nome": "Administrador do Sistema",
-      "email": "admin@abc.com"
+        "id": 1,
+        "nome": "Milão",
+        "pais": "Itália",
+        "imagem": "images/cards/milao.webp",
+        "descricao": "A capital da moda, do design e da economia da Itália",
+        "link": "milao.html"
     },
     {
-      "id": "ec37c83d-4b7f-458d-9e10-3fda7d37cd3e",
-      "login": "user",
-      "senha": "123",
-      "nome": "Usuario Comum",
-      "email": "user@abc.com"
+        "id": 2,
+        "nome": "Paris",
+        "pais": "França",
+        "descricao": "A cidade luz, famosa pela Torre Eiffel e pela culinária.",
+        "imagem": "images/cards/paris.jpg",
+        "link": "paris.html"
+    },
+    {
+     "id": 3,
+        "nome": "Londres",
+        "pais": "Inglaterra",
+        "descricao": "A cidade da Premier League",
+        "imagem": "images/cards/bigben.jpg",
+        "link": "londres.html"
     }
+
+
+    
   ]
 }
